@@ -1,0 +1,103 @@
+:root {
+    --principal: #7a1432;   /* vino del logo */
+    --acento: #bc955c;      /* dorado */
+    --fondo: #f5f5f5;
+    --texto: #222;
+    --gris: #666;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--fondo);
+    color: var(--texto);
+    line-height: 1.5;
+}
+
+/* Marca de agua al centro */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: url('img/logovertical.png') center / min(60vw, 420px) no-repeat;
+    opacity: 0.06;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.contenedor { max-width: 1000px; margin: 0 auto; padding: 0 16px; }
+
+/* Encabezado */
+.encabezado {
+    background: var(--principal);
+    color: #fff;
+    padding: 24px 0;
+    border-bottom: 5px solid var(--acento);
+    margin-bottom: 24px;
+}
+.encabezado h1 { font-size: 1.8rem; }
+.encabezado-flex { display: flex; align-items: center; gap: 20px; }
+.encabezado-flex > div { border-left: 2px solid rgba(255, 255, 255, 0.4); padding-left: 20px; }
+.logo-header { height: 64px; width: auto; background: #fff; padding: 6px 12px; border-radius: 8px; }
+
+/* Buscador */
+.buscador { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.buscador input, .buscador select {
+    flex: 1 1 220px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1rem;
+    background: #fff;
+}
+.buscador button {
+    padding: 10px 24px;
+    background: var(--principal);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+}
+.buscador button:hover { opacity: 0.9; }
+
+.conteo { color: var(--gris); margin-bottom: 12px; }
+
+/* Tarjetas de vacantes */
+.lista { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+
+.tarjeta {
+    background: #fff;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    position: relative;
+}
+.tarjeta.destacada { border: 2px solid var(--acento); }
+.tarjeta h2 { font-size: 1.2rem; color: var(--principal); margin-bottom: 4px; padding-right: 80px; }
+
+.etiqueta {
+    position: absolute; top: 12px; right: 12px;
+    background: var(--acento); color: #fff;
+    font-size: 0.75rem; padding: 2px 8px; border-radius: 4px;
+}
+
+.empresa { font-weight: 600; margin-bottom: 8px; }
+.verificada { color: #2e7d32; font-size: 0.85rem; margin-left: 6px; }
+.datos { list-style: none; color: var(--gris); font-size: 0.9rem; margin-bottom: 8px; }
+.descripcion { font-size: 0.95rem; }
+.vacio { color: var(--gris); padding: 32px 0; grid-column: 1 / -1; }
+
+/* Pie */
+.pie {
+    text-align: center; color: var(--gris);
+    padding: 32px 0; margin-top: 32px; font-size: 0.85rem;
+}
+
+/* Celular */
+@media (max-width: 600px) {
+    .encabezado-flex { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .encabezado-flex > div { border-left: none; padding-left: 0; }
+    .logo-header { height: 48px; }
+}
