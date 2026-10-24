@@ -25,6 +25,8 @@ BolsaEmpleoTizayuca/
 ├── empresas/            # Empresas y negocios que publican vacantes
 ├── vacantes/            # Vacantes, categorías y página pública de búsqueda
 ├── postulaciones/       # Relación entre candidatos y vacantes
+├── cuentas/             # Panel, usuarios, grupos y permisos; piezas CRUD reutilizables
+├── templates/           # base.html, login, plantillas CRUD genéricas
 ├── manage.py
 └── requirements.txt
 ```
@@ -35,6 +37,7 @@ BolsaEmpleoTizayuca/
 | `empresas` | Perfil de la empresa o negocio: tipo (industrial / negocio local), giro, contacto y estado de verificación por el municipio |
 | `vacantes` | Ofertas de trabajo con sueldo, horario, requisitos y categoría. Incluye la página de inicio con buscador |
 | `postulaciones` | Registro de cada candidato que se postula a una vacante y el seguimiento de su estado |
+| `cuentas` | Panel de inicio tras el login y gestión de `User`, `Group` y `Permission` desde la app (sin depender de `/admin`) |
 
 ---
 
@@ -236,15 +239,75 @@ pip install -r requirements.txt
 # 4. Aplicar migraciones
 python manage.py migrate
 
-# 5. Crear un usuario administrador
+# 5. Crear los roles (Administradores, Empresas, Candidatos) con sus permisos
+python manage.py crear_grupos
+
+# 6. Crear un usuario administrador
 python manage.py createsuperuser
 
-# 6. Correr el servidor
+# 7. (Opcional) Prueba de carga: 1000 vacantes de prueba
+python manage.py poblar_vacantes            # --cantidad 5000  |  --borrar
+
+# 8. Correr el servidor
 python manage.py runserver
 ```
 
-- Sitio: http://127.0.0.1:8000
-- Panel de administración: http://127.0.0.1:8000/admin
+- Sitio público: http://127.0.0.1:8000
+- Iniciar sesión: http://127.0.0.1:8000/cuentas/login/
+- Panel (tras iniciar sesión): http://127.0.0.1:8000/panel/
+- Admin de Django: http://127.0.0.1:8000/admin
+
+---
+
+## Autenticación, CRUD y control de accesos (Entregable 03-B)
+
+### Login y logout
+Se usan las vistas de `django.contrib.auth` en `/cuentas/login/` y `/cuentas/logout/` (logout por POST).
+`LOGIN_REDIRECT_URL = 'cuentas:panel'` y `LOGOUT_REDIRECT_URL = 'vacantes:inicio'`.
+
+### Rutas CRUD
+| Módulo | Listado | Crear | Editar | Eliminar |
+|---|---|---|---|---|
+| Vacantes | `/gestion/vacantes/` | `nueva/` | `<id>/editar/` | `<id>/eliminar/` |
+| Categorías | `/gestion/categorias/` | `nueva/` | `<id>/editar/` | `<id>/eliminar/` |
+| Empresas | `/empresas/` | `nueva/` | `<id>/editar/` | `<id>/eliminar/` |
+| Candidatos | `/candidatos/` | `nuevo/` | `<id>/editar/` | `<id>/eliminar/` |
+| Habilidades | `/candidatos/habilidades/` | `nueva/` | `<id>/editar/` | `<id>/eliminar/` |
+| Experiencia | `/candidatos/experiencia/` | `nueva/` | `<id>/editar/` | `<id>/eliminar/` |
+| Postulaciones | `/postulaciones/` | `nueva/` | `<id>/editar/` | `<id>/eliminar/` |
+| Usuarios | `/panel/usuarios/` | `nuevo/` | `<id>/editar/` y `<id>/contrasena/` | `<id>/eliminar/` |
+| Grupos | `/panel/grupos/` | `nuevo/` | `<id>/editar/` | `<id>/eliminar/` |
+| Permisos | `/panel/permisos/` | `nuevo/` | `<id>/editar/` | `<id>/eliminar/` |
+
+Todos los listados están **paginados** (20 por página; 12 en la página pública) y tienen buscador, para que el sistema siga respondiendo con miles de registros.
+
+### Roles
+| Grupo | Qué puede hacer |
+|---|---|
+| Administradores (municipio) | Todo: todos los CRUD, usuarios, grupos, permisos, verificar y destacar |
+| Empresas | Registrar **su** empresa, publicar y administrar **sus** vacantes, cambiar el estado de las postulaciones que les llegan |
+| Candidatos | Llenar **su** perfil y experiencia, postularse a vacantes y ver **sus** postulaciones |
+
+### Mitigación de OWASP A01:2021 – Broken Access Control
+1. **Autenticación:** todas las vistas de gestión heredan `LoginRequiredMixin` (o usan `@login_required`). Sin sesión, redirigen al login.
+2. **Autorización vertical:** cada vista declara `PermissionRequiredMixin` con su `permission_required` explícito (`app.view_`, `add_`, `change_`, `delete_`). Sin el permiso, responde **403**, aunque se escriba la URL a mano o se mande un POST directo.
+3. **Autorización horizontal (IDOR):** `PropietarioMixin` filtra el queryset por dueño (`usuario`, `candidato__usuario`, `vacante__empresa__usuario`). Si una empresa cambia el número en `/gestion/vacantes/15/editar/` por una vacante ajena, recibe **404**.
+4. **Campos protegidos:** una empresa no puede marcarse como verificada ni destacar sus vacantes; un candidato no cambia el estado de su postulación; solo un superusuario puede crear o editar superusuarios; nadie puede borrar su propia cuenta.
+5. **Plantillas:** los botones y el menú se muestran según `perms`, pero la seguridad real está en las vistas.
+
+### Propiedades y métodos de modelo
+- `Vacante`: `rango_sueldo`, `dias_publicada`, `total_postulaciones` (`@property`), `desactivar()`, `get_absolute_url()`
+- `Categoria`: `vacantes_activas`
+- `Empresa`: `vacantes_activas`, `estado_verificacion`, `get_absolute_url()`
+- `Candidato`: `nombre_completo`, `anios_experiencia`, `get_absolute_url()`
+- `Experiencia`: `es_actual`, `duracion_meses`, `get_absolute_url()`
+- `Postulacion`: `esta_abierta`, `marcar_vista()`, `get_absolute_url()`
+
+### Pruebas automáticas
+```bash
+python manage.py test
+```
+27 pruebas: login/logout, que **cada URL** del sistema redirija al login sin sesión, que un rol sin permiso reciba 403, que no se pueda abrir el registro de otro usuario (404), el CRUD de usuarios/grupos/permisos y la prueba de carga con 1000 vacantes.
 
 ---
 

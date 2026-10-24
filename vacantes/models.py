@@ -1,4 +1,6 @@
 from django.db import models
+from django.urls import reverse
+from django.utils import timezone
 
 
 class Categoria(models.Model):
@@ -6,6 +8,10 @@ class Categoria(models.Model):
 
     def __str__(self):
         return self.nombre
+
+    @property
+    def vacantes_activas(self):
+        return self.vacantes.filter(activa=True).count()
 
 
 class Vacante(models.Model):
@@ -24,3 +30,30 @@ class Vacante(models.Model):
 
     def __str__(self):
         return f'{self.titulo} - {self.empresa}'
+
+    def get_absolute_url(self):
+        return reverse('vacantes:editar', args=[self.pk])
+
+    @property
+    def rango_sueldo(self):
+        """Texto listo para mostrar: '$8,000 - $11,000', 'Desde $8,000' o 'A convenir'."""
+        if self.sueldo_min and self.sueldo_max:
+            return f'${self.sueldo_min:,.0f} - ${self.sueldo_max:,.0f}'
+        if self.sueldo_min:
+            return f'Desde ${self.sueldo_min:,.0f}'
+        if self.sueldo_max:
+            return f'Hasta ${self.sueldo_max:,.0f}'
+        return 'A convenir'
+
+    @property
+    def dias_publicada(self):
+        return (timezone.now() - self.fecha_publicacion).days
+
+    @property
+    def total_postulaciones(self):
+        return self.postulaciones.count()
+
+    def desactivar(self):
+        """Cierra la vacante sin borrarla (conserva sus postulaciones)."""
+        self.activa = False
+        self.save(update_fields=['activa'])

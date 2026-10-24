@@ -1,4 +1,5 @@
 from django.db import models
+from django.urls import reverse
 
 
 class Postulacion(models.Model):
@@ -23,3 +24,16 @@ class Postulacion(models.Model):
 
     def __str__(self):
         return f'{self.candidato} -> {self.vacante}'
+
+    def get_absolute_url(self):
+        return reverse('postulaciones:editar', args=[self.pk])
+
+    @property
+    def esta_abierta(self):
+        """Sigue en proceso mientras no haya sido aceptada o rechazada."""
+        return self.estado not in ('aceptada', 'rechazada')
+
+    def marcar_vista(self):
+        if self.estado == 'enviada':
+            self.estado = 'vista'
+            self.save(update_fields=['estado'])

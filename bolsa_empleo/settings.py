@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'empresas',
     'vacantes',
     'postulaciones',
+    'cuentas',
 ]
 
 MIDDLEWARE = [
@@ -58,7 +59,7 @@ ROOT_URLCONF = 'bolsa_empleo.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -129,3 +130,13 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+
+# Login / logout
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'cuentas:panel'
+LOGOUT_REDIRECT_URL = 'vacantes:inicio'
+
+# Archivos subidos (CV de candidatos)
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'media'

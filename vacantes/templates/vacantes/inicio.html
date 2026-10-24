@@ -1,24 +1,6 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bolsa de Empleo Tizayuca</title>
-    <link rel="stylesheet" href="{% static 'vacantes/estilos.css' %}">
-</head>
-<body>
-    <header class="encabezado">
-        <div class="contenedor encabezado-flex">
-            <img src="{% static 'vacantes/img/logohorizontal.png' %}" alt="Tizayuca Ciudad Próspera" class="logo-header">
-            <div>
-                <h1>Bolsa de Empleo</h1>
-                <p>Encuentra trabajo en Tizayuca y alrededores</p>
-            </div>
-        </div>
-    </header>
+{% extends 'base.html' %}
 
-    <main class="contenedor">
+{% block contenido %}
         <form method="get" class="buscador">
             <input type="text" name="q" value="{{ busqueda }}" placeholder="Puesto, empresa o palabra clave">
             <select name="categoria">
@@ -30,7 +12,7 @@
             <button type="submit">Buscar</button>
         </form>
 
-        <p class="conteo">{{ vacantes|length }} vacante{{ vacantes|length|pluralize }} disponible{{ vacantes|length|pluralize }}</p>
+        <p class="conteo">{{ total }} vacante{{ total|pluralize }} disponible{{ total|pluralize }}</p>
 
         <section class="lista">
             {% for v in vacantes %}
@@ -55,10 +37,6 @@
                 <p class="vacio">No hay vacantes con esos filtros por ahora.</p>
             {% endfor %}
         </section>
-    </main>
 
-    <footer class="pie">
-        <p>H. Ayuntamiento de Tizayuca · Bolsa de Empleo</p>
-    </footer>
-</body>
-</html>
+        {% include 'vacantes/paginacion.html' %}
+    {% endblock %}

@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.urls import reverse
 
 
 class Empresa(models.Model):
@@ -18,3 +19,14 @@ class Empresa(models.Model):
 
     def __str__(self):
         return self.nombre
+
+    def get_absolute_url(self):
+        return reverse('empresas:editar', args=[self.pk])
+
+    @property
+    def vacantes_activas(self):
+        return self.vacantes.filter(activa=True).count()
+
+    @property
+    def estado_verificacion(self):
+        return 'Verificada' if self.verificada else 'Pendiente de verificar'
