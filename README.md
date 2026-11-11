@@ -250,6 +250,11 @@ python manage.py runserver
 
 Opcional: `python manage.py poblar_vacantes` crea 1000 vacantes de prueba (`--cantidad 5000` o `--borrar`) y `python manage.py test` corre las pruebas.
 
+### Funciones para el público
+- **Registro** en `/panel/registro/`: la persona elige si busca empleo o si es empresa y queda en el grupo correspondiente (nunca en uno de administración).
+- **Detalle de vacante** en `/vacantes/<id>/` y botón **Postularme** (una sola vez por vacante).
+- **Cambio de contraseña** desde el menú.
+
 ### Cuentas que crea `preparar_entorno`
 | Usuario | Rol | Contraseña inicial |
 |---|---|---|
@@ -304,6 +309,21 @@ Todos los listados están **paginados** (20 por página; 12 en la página públi
 | Empresas | Registrar **su** empresa, publicar y administrar **sus** vacantes, cambiar el estado de las postulaciones que les llegan |
 | Candidatos | Llenar **su** perfil y experiencia, postularse a vacantes y ver **sus** postulaciones |
 
+### Medidas de seguridad adicionales
+| Riesgo | Medida |
+|---|---|
+| Fuerza bruta (A07) | Bloqueo de 15 min tras 5 intentos fallidos por usuario e IP; mismo mensaje para usuario inexistente o contraseña mala |
+| Contraseñas débiles (A07) | Validadores de Django (largo mínimo, comunes, solo números) también en el registro |
+| Datos personales (A01) | Los CV **no** tienen URL pública: se descargan en `/candidatos/<id>/cv/` solo por su dueño, el municipio, el perfil de solo lectura o la empresa a cuya vacante se postuló |
+| Archivos subidos (A04/A08) | Solo PDF de hasta 2 MB, con revisión de la firma `%PDF-` y nombre aleatorio en disco |
+| Escalada de privilegios (A01) | El registro público solo permite los roles Candidatos y Empresas |
+| Configuración (A05) | Secretos por variables de entorno; con `DJANGO_DEBUG=0` se fuerza HTTPS, cookies seguras, HSTS y se exige `DJANGO_SECRET_KEY`; `X-Frame-Options: DENY`, `nosniff` y política de referrer |
+| Inyección y XSS (A03) | ORM de Django (sin SQL manual) y autoescape de plantillas |
+| CSRF | Token en todos los formularios; cierre de sesión y postulación solo por POST |
+| Errores | Páginas 403, 404 y 500 propias, sin detalles internos |
+
+`DJANGO_DEBUG=0 python manage.py check --deploy` no reporta problemas.
+
 ### Mitigación de OWASP A01:2021 – Broken Access Control
 1. **Autenticación:** todas las vistas de gestión heredan `LoginRequiredMixin` (o usan `@login_required`). Sin sesión, redirigen al login.
 2. **Autorización vertical:** cada vista declara `PermissionRequiredMixin` con su `permission_required` explícito (`app.view_`, `add_`, `change_`, `delete_`). Sin el permiso, responde **403**, aunque se escriba la URL a mano o se mande un POST directo.
@@ -323,7 +343,7 @@ Todos los listados están **paginados** (20 por página; 12 en la página públi
 ```bash
 python manage.py test
 ```
-29 pruebas: login/logout, que **cada URL** del sistema redirija al login sin sesión, que un rol sin permiso reciba 403, que no se pueda abrir el registro de otro usuario (404), el CRUD de usuarios/grupos/permisos y la prueba de carga con 1000 vacantes.
+45 pruebas: login/logout, que **cada URL** del sistema redirija al login sin sesión, que un rol sin permiso reciba 403, que no se pueda abrir el registro de otro usuario (404), el CRUD de usuarios/grupos/permisos y la prueba de carga con 1000 vacantes.
 
 ---
 
