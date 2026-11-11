@@ -453,3 +453,13 @@ class CorreoYMatriculaTest(Base):
                              reverse('cuentas:usuario_lista'))
         r = self.client.post(reverse('cuentas:usuario_crear'), datos)
         self.assertContains(r, 'Ya existe una cuenta con ese correo')
+
+
+class ErrorBajoSuCampoTest(Base):
+    def test_error_de_correo_sale_despues_del_campo_correo(self):
+        User.objects.create_user('x', 'maria@example.com', 'Clave.Segura.123')
+        html = self.client.post(reverse('cuentas:registro'), dict(
+            first_name='Otra', last_name='Repetido', email='maria@example.com',
+            password1='Clave.Muy.Segura.9', password2='Clave.Muy.Segura.9', tipo='candidato')).content.decode()
+        self.assertGreater(html.index('Ya existe una cuenta con ese correo'), html.index('name="email"'))
+        self.assertLess(html.index('Ya existe una cuenta con ese correo'), html.index('name="password1"'))
