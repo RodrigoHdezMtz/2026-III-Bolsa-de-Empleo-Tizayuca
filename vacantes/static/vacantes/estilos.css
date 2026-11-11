@@ -185,3 +185,6 @@ body::before {
     width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; font: inherit;
 }
 .detalle form { width: 100%; }
+#id_tipo { display: grid; gap: 8px; margin-top: 6px; }
+#id_tipo > div label { display: flex; align-items: center; gap: 8px; font-weight: normal; }
+#id_tipo input[type=radio] { width: auto; margin: 0; }
