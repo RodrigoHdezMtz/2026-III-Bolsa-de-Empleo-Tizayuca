@@ -141,6 +141,8 @@ if [ "$LISTO" -ne 1 ]; then
     fallo "El servicio web no respondió. Revisa $LOG"
 fi
 
+if [ "$MODO" = "repositorio" ]; then DETENER="./instalar.sh --detener"; else DETENER="DESTINO=$RAIZ $AQUI/instalar.sh --detener"; fi
+
 cat <<FIN
 
 Instalación terminada. El servicio web está activo (PID $(cat "$PIDFILE")).
@@ -149,6 +151,6 @@ Instalación terminada. El servicio web está activo (PID $(cat "$PIDFILE")).
   Iniciar sesión: http://127.0.0.1:$PUERTO/cuentas/login/
   Administrador:  admin@example.com   /  Tizayuca.2026
   Solo lectura:   profesor@example.com / Tizayuca.2026
-  Detener:        $AQUI/instalar.sh --detener   (o ./instalar.sh --detener desde el repositorio)
+  Detener:        $DETENER
   Registro:       $LOG
 FIN
