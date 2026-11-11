@@ -19,7 +19,8 @@ class Base(TestCase):
     @classmethod
     def setUpTestData(cls):
         call_command('crear_grupos', verbosity=0)
-        g = {n: Group.objects.get(name=n) for n in ('Administradores', 'Empresas', 'Candidatos')}
+        g = {n: Group.objects.get(name=n)
+             for n in ('Administradores', 'Solo lectura', 'Empresas', 'Candidatos')}
 
         def usuario(nombre, grupo):
             u = User.objects.create_user(nombre, password='Clave.Segura.123')
@@ -29,6 +30,7 @@ class Base(TestCase):
         cls.admin = usuario('admin_muni', 'Administradores')
         cls.u_emp1, cls.u_emp2 = usuario('empresa1', 'Empresas'), usuario('empresa2', 'Empresas')
         cls.u_cand1, cls.u_cand2 = usuario('cand1', 'Candidatos'), usuario('cand2', 'Candidatos')
+        cls.profesor = usuario('profesor', 'Solo lectura')
         cls.root = User.objects.create_superuser('root', password='Clave.Segura.123')
 
         datos = dict(tipo='local', giro='g', direccion='d', telefono='1')
@@ -170,6 +172,26 @@ class RegistrosAjenosTest(Base):
         e = Empresa.objects.get(nombre='Tortillería')
         self.assertEqual(e.usuario, nuevo)
         self.assertFalse(e.verificada)   # no se puede auto-verificar
+
+
+class SoloLecturaTest(Base):
+    """El perfil 'Solo lectura' ve todo, pero no puede crear, editar ni borrar nada."""
+
+    def test_ve_todos_los_registros_de_todos(self):
+        self.entrar(self.profesor)
+        self.assertContains(self.client.get(reverse('empresas:lista')), 'Barbería Dos')
+        self.assertContains(self.client.get(reverse('empresas:lista')), 'Panadería Uno')
+        self.assertEqual(self.client.get(reverse('candidatos:lista')).status_code, 200)
+        self.assertEqual(self.client.get(reverse('postulaciones:lista')).status_code, 200)
+        self.assertEqual(self.client.get(reverse('cuentas:usuario_lista')).status_code, 200)
+
+    def test_no_puede_crear_editar_ni_borrar(self):
+        self.entrar(self.profesor)
+        for url in self.todas_las_urls():
+            if any(a in url for a in ('nuevo', 'editar', 'eliminar', 'contrasena')):
+                self.assertEqual(self.client.get(url).status_code, 403, url)
+                self.assertEqual(self.client.post(url, {}).status_code, 403, url)
+        self.assertTrue(Empresa.objects.filter(pk=self.emp1.pk).exists())
 
 
 class GestionAuthTest(Base):
